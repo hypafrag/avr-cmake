@@ -1,5 +1,5 @@
 # I target a recent cmake, it shouldn't be a problem on a dev machine
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.7)
 # Project name
 project("My Firmware")
 
