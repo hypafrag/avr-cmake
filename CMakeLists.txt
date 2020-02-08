@@ -7,7 +7,7 @@ project("My Firmware")
 set(PRODUCT_NAME my_firmware)
 
 ## AVR Chip Configuration
-set(F_CPU 1000000UL)
+set(F_CPU 8000000UL)
 # CPU, you can find the list here:
 # https://gcc.gnu.org/onlinedocs/gcc/AVR-Options.html
 set(MCU atmega8)
@@ -16,12 +16,14 @@ set(BAUD 9600)
 # The programmer to use, read avrdude manual for list
 set(PROG_TYPE linuxgpio)
 
+set(SSH_LOGIN pi@cato.local)
+
+set(AVRDUDE ssh ${SSH_LOGIN} sudo avrdude)
+
 # AVR Fuses, must be in concordance with your hardware and F_CPU
 # http://eleccelerator.com/fusecalc/fusecalc.php
-set(E_FUSE 0xfd)
-set(H_FUSE 0xda)
-set(L_FUSE 0xfd)
-set(LOCK_BIT 0xff)
+set(H_FUSE 0xd9)
+set(L_FUSE 0xff)
 
 
 # Use AVR GCC toolchain
@@ -43,7 +45,10 @@ add_compile_options(
     -mmcu=${MCU} # MCU
     -Os # optimize
 )
+
 file(GLOB SRC_FILES "src/*.c") # Load all files in src folder
+
+SET_SOURCE_FILES_PROPERTIES(src/usbdrv/usbdrvasm.S PROPERTIES LANGUAGE C)
 
 # Create one target
 add_executable(${PRODUCT_NAME} ${SRC_FILES})
@@ -60,14 +65,19 @@ add_custom_target(hex ALL avr-objcopy -R .eeprom -O ihex ${PRODUCT_NAME}.elf ${P
 # use eeprom static variables)
 add_custom_target(eeprom avr-objcopy -j .eeprom  --set-section-flags=.eeprom="alloc,load"  --change-section-lma .eeprom=0 -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.eep DEPENDS strip)
 
+add_custom_target(scp scp ${PRODUCT_NAME}.hex ${SSH_LOGIN}:/tmp/${PRODUCT_NAME}.hex DEPENDS hex)
+
 # Upload the firmware with avrdude
-add_custom_target(upload avrdude  -c ${PROG_TYPE} -p ${MCU} -U flash:w:${PRODUCT_NAME}.hex DEPENDS hex)
+add_custom_target(upload ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU} -U flash:w:/tmp/${PRODUCT_NAME}.hex DEPENDS scp)
 
 # Upload the eeprom with avrdude
-add_custom_target(upload_eeprom avrdude -c ${PROG_TYPE} -p ${MCU}  -U eeprom:w:${PRODUCT_NAME}.eep DEPENDS eeprom)
+add_custom_target(upload_eeprom ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -U eeprom:w:${PRODUCT_NAME}.eep DEPENDS eeprom)
 
 # Burn fuses
-add_custom_target(fuses avrdude -c ${PROG_TYPE} -p ${MCU}  -U lfuse:w:${L_FUSE}:m -U hfuse:w:${H_FUSE}:m -U efuse:w:${E_FUSE}:m -U lock:w:${LOCK_BIT}:m )
+add_custom_target(fuses ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -U lfuse:w:${L_FUSE}:m -U hfuse:w:${H_FUSE}:m)
+
+# -v
+add_custom_target(view ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -v)
 
 # Clean extra files
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${PRODUCT_NAME}.hex;${PRODUCT_NAME}.eeprom;${PRODUCT_NAME}.lst")
