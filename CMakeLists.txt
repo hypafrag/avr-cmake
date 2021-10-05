@@ -65,19 +65,19 @@ add_custom_target(hex ALL avr-objcopy -R .eeprom -O ihex ${PRODUCT_NAME}.elf ${P
 # use eeprom static variables)
 add_custom_target(eeprom avr-objcopy -j .eeprom  --set-section-flags=.eeprom="alloc,load"  --change-section-lma .eeprom=0 -O ihex ${PRODUCT_NAME}.elf ${PRODUCT_NAME}.eep DEPENDS strip)
 
-add_custom_target(scp scp ${PRODUCT_NAME}.hex ${SSH_LOGIN}:/tmp/${PRODUCT_NAME}.hex DEPENDS hex)
+add_custom_target(scp bash -lc 'scp ${PRODUCT_NAME}.hex ${SSH_LOGIN}:/tmp/${PRODUCT_NAME}.hex' DEPENDS hex)
 
 # Upload the firmware with avrdude
-add_custom_target(upload ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU} -U flash:w:/tmp/${PRODUCT_NAME}.hex DEPENDS scp)
+add_custom_target(upload bash -lc '${AVRDUDE} -c ${PROG_TYPE} -p ${MCU} -U flash:w:/tmp/${PRODUCT_NAME}.hex' DEPENDS scp)
 
 # Upload the eeprom with avrdude
-add_custom_target(upload_eeprom ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -U eeprom:w:${PRODUCT_NAME}.eep DEPENDS eeprom)
+add_custom_target(upload_eeprom bash -lc '${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -U eeprom:w:${PRODUCT_NAME}.eep' DEPENDS eeprom)
 
 # Burn fuses
-add_custom_target(fuses ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -U lfuse:w:${L_FUSE}:m -U hfuse:w:${H_FUSE}:m)
+add_custom_target(fuses bash -lc '${AVRDUDE} -c ${PROG_TYPE} -p ${MCU} -U lfuse:w:${L_FUSE}:m -U hfuse:w:${H_FUSE}:m')
 
 # -v
-add_custom_target(view ${AVRDUDE} -c ${PROG_TYPE} -p ${MCU}  -v)
+add_custom_target(view bash -lc '${AVRDUDE} -c ${PROG_TYPE} -p ${MCU} -v')
 
 # Clean extra files
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${PRODUCT_NAME}.hex;${PRODUCT_NAME}.eeprom;${PRODUCT_NAME}.lst")
