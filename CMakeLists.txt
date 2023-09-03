@@ -1,5 +1,6 @@
 # I target a recent cmake, it shouldn't be a problem on a dev machine
 cmake_minimum_required(VERSION 3.7)
+include(cmake/toolchain.cmake)
 # Project name
 project("My Firmware")
 
@@ -24,7 +25,6 @@ set(AVRDUDE ssh ${SSH_LOGIN} sudo avrdude)
 # http://eleccelerator.com/fusecalc/fusecalc.php
 set(H_FUSE 0xd9)
 set(L_FUSE 0xff)
-
 
 # Use AVR GCC toolchain
 set(CMAKE_SYSTEM_NAME Generic)
