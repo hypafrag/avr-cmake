@@ -26,13 +26,6 @@ set(AVRDUDE ssh ${SSH_LOGIN} sudo avrdude)
 set(H_FUSE 0xd9)
 set(L_FUSE 0xff)
 
-# Use AVR GCC toolchain
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_CXX_COMPILER avr-g++)
-set(CMAKE_C_COMPILER avr-gcc)
-set(CMAKE_ASM_COMPILER avr-gcc)
-
-
 # Pass defines to compiler
 add_definitions(
     -DF_CPU=${F_CPU}
